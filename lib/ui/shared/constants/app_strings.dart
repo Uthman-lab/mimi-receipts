@@ -65,6 +65,7 @@ class AppStrings {
   // Price Comparison
   static const String priceComparison = 'Price Comparison';
   static const String searchItem = 'Search Item';
+  static const String selectItem = 'Select Item';
   static const String priceHistory = 'Price History';
   static const String noPriceData = 'No Price Data';
   static const String noPriceDataMessage = 'No price history found for this item';

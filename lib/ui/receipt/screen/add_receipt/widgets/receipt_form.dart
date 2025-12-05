@@ -152,46 +152,153 @@ class _ReceiptFormState extends State<ReceiptForm> {
 
   void _showAddItemDialog(BuildContext context) {
     final quantityController = TextEditingController();
-    final descriptionController = TextEditingController();
     final unitPriceController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
     String selectedCategory = Categories.food;
 
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text(AppStrings.addItem),
-        content: SingleChildScrollView(
+      builder: (dialogContext) => _AddItemDialogContent(
+        formKey: formKey,
+        itemNames: _itemNames,
+        isLoadingItemNames: _isLoadingItemNames,
+        quantityController: quantityController,
+        unitPriceController: unitPriceController,
+        selectedCategory: selectedCategory,
+        onCategoryChanged: (category) {
+          selectedCategory = category;
+        },
+        onItemAdded: (newItemName) {
+          // Add new item to the local list if it doesn't exist
+          if (!_itemNames.contains(newItemName)) {
+            setState(() {
+              _itemNames.add(newItemName);
+              _itemNames.sort(); // Keep sorted
+            });
+          }
+        },
+        onAdd: (selectedItem) {
+          final quantity = double.tryParse(quantityController.text);
+          final unitPrice = double.tryParse(unitPriceController.text);
+
+          if (quantity == null || unitPrice == null || selectedItem.isEmpty) {
+            return;
+          }
+
+          final amount = quantity * unitPrice;
+          final newItem = ReceiptItem(
+            receiptId: 0,
+            quantity: quantity,
+            description: selectedItem,
+            unitPrice: unitPrice,
+            amount: amount,
+            category: selectedCategory,
+          );
+
+          final newItems = List<ReceiptItem>.from(widget.items);
+          newItems.add(newItem);
+          widget.onItemsChanged(newItems);
+
+          Navigator.pop(dialogContext);
+        },
+      ),
+    );
+  }
+}
+
+class _AddItemDialogContent extends StatefulWidget {
+  final GlobalKey<FormState> formKey;
+  final List<String> itemNames;
+  final bool isLoadingItemNames;
+  final TextEditingController quantityController;
+  final TextEditingController unitPriceController;
+  final String selectedCategory;
+  final ValueChanged<String> onCategoryChanged;
+  final ValueChanged<String> onItemAdded;
+  final ValueChanged<String> onAdd;
+
+  const _AddItemDialogContent({
+    required this.formKey,
+    required this.itemNames,
+    required this.isLoadingItemNames,
+    required this.quantityController,
+    required this.unitPriceController,
+    required this.selectedCategory,
+    required this.onCategoryChanged,
+    required this.onItemAdded,
+    required this.onAdd,
+  });
+
+  @override
+  State<_AddItemDialogContent> createState() => _AddItemDialogContentState();
+}
+
+class _AddItemDialogContentState extends State<_AddItemDialogContent> {
+  String? selectedItem;
+  late List<String> _currentItemNames;
+  String get selectedCategory => widget.selectedCategory;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentItemNames = List<String>.from(widget.itemNames);
+  }
+
+  void handleItemSelected(String? item) {
+    setState(() {
+      selectedItem = item;
+    });
+    if (item != null) {
+      // Check if this is a new item not in the list
+      if (!_currentItemNames.contains(item)) {
+        widget.onItemAdded(item);
+        setState(() {
+          _currentItemNames.add(item);
+          _currentItemNames.sort(); // Keep sorted
+        });
+      }
+
+      // Auto-fill unit price when item is selected
+      getIt<GetLastItemPrice>()(item)
+          .then((lastPrice) {
+            if (lastPrice != null && mounted) {
+              widget.unitPriceController.text = lastPrice.toStringAsFixed(2);
+            }
+          })
+          .catchError((e) {
+            // Ignore errors, user can still enter price manually
+          });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text(AppStrings.addItem),
+      content: SingleChildScrollView(
+        child: Form(
+          key: widget.formKey,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              AppAutocompleteField(
+              SearchableItemDropdown(
+                key: ValueKey('${selectedItem}_${_currentItemNames.length}'),
+                selectedItem: selectedItem,
+                onItemSelected: handleItemSelected,
+                items: _currentItemNames,
+                enabled: !widget.isLoadingItemNames,
                 label: AppStrings.description,
-                controller: descriptionController,
-                options: _itemNames,
-                enabled: !_isLoadingItemNames,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return AppStrings.fieldRequired;
                   }
                   return null;
                 },
-                onSelected: (String selectedItem) async {
-                  // Auto-fill unit price when item is selected
-                  try {
-                    final getLastItemPrice = getIt<GetLastItemPrice>();
-                    final lastPrice = await getLastItemPrice(selectedItem);
-                    if (lastPrice != null && context.mounted) {
-                      unitPriceController.text = lastPrice.toStringAsFixed(2);
-                    }
-                  } catch (e) {
-                    // Ignore errors, user can still enter price manually
-                  }
-                },
               ),
               const SizedBox(height: AppSpacing.paddingM),
               AppTextField(
                 label: AppStrings.quantity,
-                controller: quantityController,
+                controller: widget.quantityController,
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
@@ -211,7 +318,7 @@ class _ReceiptFormState extends State<ReceiptForm> {
               const SizedBox(height: AppSpacing.paddingM),
               AppTextField(
                 label: AppStrings.unitPrice,
-                controller: unitPriceController,
+                controller: widget.unitPriceController,
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
@@ -242,49 +349,34 @@ class _ReceiptFormState extends State<ReceiptForm> {
                 }).toList(),
                 onChanged: (value) {
                   if (value != null) {
-                    selectedCategory = value;
+                    widget.onCategoryChanged(value);
                   }
                 },
               ),
             ],
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text(AppStrings.cancel),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final quantity = double.tryParse(quantityController.text);
-              final unitPrice = double.tryParse(unitPriceController.text);
-
-              if (quantity == null ||
-                  unitPrice == null ||
-                  descriptionController.text.isEmpty) {
-                return;
-              }
-
-              final amount = quantity * unitPrice;
-              final newItem = ReceiptItem(
-                receiptId: 0,
-                quantity: quantity,
-                description: descriptionController.text,
-                unitPrice: unitPrice,
-                amount: amount,
-                category: selectedCategory,
-              );
-
-              final newItems = List<ReceiptItem>.from(widget.items);
-              newItems.add(newItem);
-              widget.onItemsChanged(newItems);
-
-              Navigator.pop(dialogContext);
-            },
-            child: const Text(AppStrings.add),
-          ),
-        ],
       ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text(AppStrings.cancel),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            if (!widget.formKey.currentState!.validate()) {
+              return;
+            }
+
+            if (selectedItem == null || selectedItem!.isEmpty) {
+              return;
+            }
+
+            widget.onAdd(selectedItem!);
+          },
+          child: const Text(AppStrings.add),
+        ),
+      ],
     );
   }
 }

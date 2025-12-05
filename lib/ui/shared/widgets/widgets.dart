@@ -12,4 +12,5 @@ export 'date_picker_field.dart';
 export 'item_row.dart';
 export 'shop_dropdown_field.dart';
 export 'shop_list_item.dart';
+export 'searchable_item_dropdown.dart';
 
