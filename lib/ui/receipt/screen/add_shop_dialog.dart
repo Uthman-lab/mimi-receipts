@@ -4,7 +4,9 @@ import '../../shared/widgets/app_text_field.dart';
 import '../../shared/constants/constants.dart';
 
 class AddShopDialog extends StatefulWidget {
-  const AddShopDialog({super.key});
+  final Shop? shop;
+
+  const AddShopDialog({super.key, this.shop});
 
   @override
   State<AddShopDialog> createState() => _AddShopDialogState();
@@ -15,6 +17,16 @@ class _AddShopDialogState extends State<AddShopDialog> {
   final _nameController = TextEditingController();
   final _addressController = TextEditingController();
   final _telController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.shop != null) {
+      _nameController.text = widget.shop!.name;
+      _addressController.text = widget.shop!.address ?? '';
+      _telController.text = widget.shop!.tel ?? '';
+    }
+  }
 
   @override
   void dispose() {
@@ -30,6 +42,7 @@ class _AddShopDialogState extends State<AddShopDialog> {
     }
 
     final shop = Shop(
+      id: widget.shop?.id,
       name: _nameController.text.trim(),
       address: _addressController.text.trim().isEmpty 
           ? null 
@@ -44,8 +57,9 @@ class _AddShopDialogState extends State<AddShopDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isEditMode = widget.shop != null;
     return AlertDialog(
-      title: const Text(AppStrings.addShop),
+      title: Text(isEditMode ? AppStrings.editShop : AppStrings.addShop),
       content: Form(
         key: _formKey,
         child: SingleChildScrollView(
@@ -85,7 +99,7 @@ class _AddShopDialogState extends State<AddShopDialog> {
         ),
         ElevatedButton(
           onPressed: _saveShop,
-          child: const Text(AppStrings.add),
+          child: Text(isEditMode ? AppStrings.updateShop : AppStrings.add),
         ),
       ],
     );

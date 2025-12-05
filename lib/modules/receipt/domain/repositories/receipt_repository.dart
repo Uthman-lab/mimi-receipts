@@ -18,5 +18,6 @@ abstract class ReceiptRepository {
   Future<int> addShop(Shop shop);
   Future<void> updateShop(Shop shop);
   Future<void> deleteShop(int id);
+  Future<List<Receipt>> getReceiptsByShopId(int shopId);
 }
 

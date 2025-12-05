@@ -9,4 +9,7 @@ export 'get_item_names.dart';
 export 'get_last_item_price.dart';
 export 'get_shops.dart';
 export 'add_shop.dart';
+export 'update_shop.dart';
+export 'delete_shop.dart';
+export 'get_receipts_by_shop.dart';
 

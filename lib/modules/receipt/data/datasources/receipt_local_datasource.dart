@@ -295,5 +295,22 @@ class ReceiptLocalDataSource {
     if (result.isEmpty) return '';
     return result.first[columnShopNameCol] as String;
   }
+
+  Future<List<ReceiptModel>> getReceiptsByShopId(int shopId) async {
+    final db = await databaseHelper.database;
+    final receipts = await db.query(
+      tableReceipts,
+      where: '$columnShopId = ?',
+      whereArgs: [shopId],
+      orderBy: '$columnDate DESC',
+    );
+
+    final List<ReceiptModel> receiptList = [];
+    for (var receiptMap in receipts) {
+      final items = await getReceiptItems(receiptMap[columnId] as int);
+      receiptList.add(ReceiptModel.fromDatabaseJson(receiptMap, items));
+    }
+    return receiptList;
+  }
 }
 

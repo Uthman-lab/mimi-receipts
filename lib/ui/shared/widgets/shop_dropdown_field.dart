@@ -3,6 +3,7 @@ import '../../../../modules/receipt/domain/entities/shop.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../modules/receipt/domain/usecases/usecases.dart';
 import '../../receipt/screen/add_shop_dialog.dart';
+import '../../receipt/screen/shop_management_sheet.dart';
 import '../constants/constants.dart';
 
 class ShopDropdownField extends StatefulWidget {
@@ -77,6 +78,28 @@ class _ShopDropdownFieldState extends State<ShopDropdownField> {
     }
   }
 
+  Future<void> _showShopManagementSheet() async {
+    final result = await showModalBottomSheet<Shop?>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => ShopManagementSheet(
+        selectedShop: widget.selectedShop,
+        onShopSelected: (shop) {
+          Navigator.pop(context, shop);
+        },
+      ),
+    );
+
+    if (result != null && mounted) {
+      await _loadShops();
+      widget.onShopSelected(result);
+    } else if (mounted) {
+      // Reload shops in case they were edited/deleted
+      await _loadShops();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // Find the matching shop from the list to ensure object equality
@@ -98,10 +121,20 @@ class _ShopDropdownFieldState extends State<ShopDropdownField> {
       decoration: InputDecoration(
         labelText: AppStrings.shop,
         suffixIcon: widget.enabled
-            ? IconButton(
-                icon: const Icon(Icons.add),
-                onPressed: _showAddShopDialog,
-                tooltip: AppStrings.addShop,
+            ? Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.settings),
+                    onPressed: _showShopManagementSheet,
+                    tooltip: AppStrings.manageShops,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.add),
+                    onPressed: _showAddShopDialog,
+                    tooltip: AppStrings.addShop,
+                  ),
+                ],
               )
             : null,
       ),

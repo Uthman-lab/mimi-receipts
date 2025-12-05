@@ -150,5 +150,10 @@ class ReceiptRepositoryImpl implements ReceiptRepository {
   Future<void> deleteShop(int id) async {
     await localDataSource.deleteShop(id);
   }
+
+  @override
+  Future<List<Receipt>> getReceiptsByShopId(int shopId) async {
+    return await localDataSource.getReceiptsByShopId(shopId);
+  }
 }
 
