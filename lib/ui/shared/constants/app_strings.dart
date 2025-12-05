@@ -70,6 +70,20 @@ class AppStrings {
   static const String noPriceData = 'No Price Data';
   static const String noPriceDataMessage = 'No price history found for this item';
 
+  // Category
+  static const String categories = 'Categories';
+  static const String addCategory = 'Add Category';
+  static const String editCategory = 'Edit Category';
+  static const String updateCategory = 'Update Category';
+  static const String manageCategories = 'Manage Categories';
+  static const String categoryName = 'Category Name';
+  static const String categoryHasReceiptItems = 'Cannot delete category with existing receipt items';
+  static const String deleteCategoryConfirm = 'Are you sure you want to delete this category?';
+  static const String categoryDeleted = 'Category deleted successfully';
+  static const String categoryUpdated = 'Category updated successfully';
+  static const String noCategories = 'No Categories';
+  static const String noCategoriesMessage = 'Add your first category to get started';
+
   // Validation
   static const String fieldRequired = 'This field is required';
   static const String invalidNumber = 'Please enter a valid number';

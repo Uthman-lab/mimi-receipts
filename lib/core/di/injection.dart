@@ -30,15 +30,28 @@ Future<void> setupDependencyInjection() async {
   getIt.registerLazySingleton(() => UpdateReceipt(getIt<ReceiptRepository>()));
   getIt.registerLazySingleton(() => DeleteReceipt(getIt<ReceiptRepository>()));
   getIt.registerLazySingleton(() => GetStatistics(getIt<ReceiptRepository>()));
-  getIt.registerLazySingleton(() => GetPriceHistory(getIt<ReceiptRepository>()));
+  getIt.registerLazySingleton(
+    () => GetPriceHistory(getIt<ReceiptRepository>()),
+  );
   getIt.registerLazySingleton(() => GetShopNames(getIt<ReceiptRepository>()));
   getIt.registerLazySingleton(() => GetItemNames(getIt<ReceiptRepository>()));
-  getIt.registerLazySingleton(() => GetLastItemPrice(getIt<ReceiptRepository>()));
+  getIt.registerLazySingleton(
+    () => GetLastItemPrice(getIt<ReceiptRepository>()),
+  );
   getIt.registerLazySingleton(() => GetShops(getIt<ReceiptRepository>()));
   getIt.registerLazySingleton(() => AddShop(getIt<ReceiptRepository>()));
   getIt.registerLazySingleton(() => UpdateShop(getIt<ReceiptRepository>()));
   getIt.registerLazySingleton(() => DeleteShop(getIt<ReceiptRepository>()));
-  getIt.registerLazySingleton(() => GetReceiptsByShop(getIt<ReceiptRepository>()));
+  getIt.registerLazySingleton(
+    () => GetReceiptsByShop(getIt<ReceiptRepository>()),
+  );
+  getIt.registerLazySingleton(() => GetCategories(getIt<ReceiptRepository>()));
+  getIt.registerLazySingleton(() => AddCategory(getIt<ReceiptRepository>()));
+  getIt.registerLazySingleton(() => UpdateCategory(getIt<ReceiptRepository>()));
+  getIt.registerLazySingleton(() => DeleteCategory(getIt<ReceiptRepository>()));
+  getIt.registerLazySingleton(
+    () => CategoryHasReceiptItems(getIt<ReceiptRepository>()),
+  );
 
   // BLoCs
   getIt.registerFactory(
@@ -51,15 +64,10 @@ Future<void> setupDependencyInjection() async {
   );
 
   getIt.registerFactory(
-    () => StatisticsBloc(
-      getStatistics: getIt<GetStatistics>(),
-    ),
+    () => StatisticsBloc(getStatistics: getIt<GetStatistics>()),
   );
 
   getIt.registerFactory(
-    () => PriceComparisonBloc(
-      getPriceHistory: getIt<GetPriceHistory>(),
-    ),
+    () => PriceComparisonBloc(getPriceHistory: getIt<GetPriceHistory>()),
   );
 }
-

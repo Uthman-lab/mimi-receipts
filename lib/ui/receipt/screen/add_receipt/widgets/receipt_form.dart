@@ -3,9 +3,10 @@ import 'package:flutter/services.dart';
 import '../../../../shared/shared.dart';
 import '../../../../../modules/receipt/domain/entities/receipt_item.dart';
 import '../../../../../modules/receipt/domain/entities/shop.dart';
-import '../../../../../core/constants/categories.dart';
+import '../../../../../modules/receipt/domain/entities/category.dart';
 import '../../../../../core/di/injection.dart';
 import '../../../../../modules/receipt/domain/usecases/usecases.dart';
+import '../../../screen/category_management_sheet.dart';
 
 class ReceiptForm extends StatefulWidget {
   final Shop? selectedShop;
@@ -33,12 +34,16 @@ class _ReceiptFormState extends State<ReceiptForm> {
   DateTime? _selectedDate;
   List<String> _itemNames = [];
   bool _isLoadingItemNames = true;
+  List<Category> _categories = [];
+  bool _isLoadingCategories = true;
+  String? _selectedCategoryName;
 
   @override
   void initState() {
     super.initState();
     _selectedDate = widget.initialDate ?? DateTime.now();
     _loadItemNames();
+    _loadCategories();
   }
 
   Future<void> _loadItemNames() async {
@@ -52,6 +57,24 @@ class _ReceiptFormState extends State<ReceiptForm> {
     } catch (e) {
       setState(() {
         _isLoadingItemNames = false;
+      });
+    }
+  }
+
+  Future<void> _loadCategories() async {
+    try {
+      final getCategories = getIt<GetCategories>();
+      final categories = await getCategories();
+      setState(() {
+        _categories = categories;
+        _selectedCategoryName = categories.isNotEmpty
+            ? categories.first.name
+            : null;
+        _isLoadingCategories = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoadingCategories = false;
       });
     }
   }
@@ -154,7 +177,7 @@ class _ReceiptFormState extends State<ReceiptForm> {
     final quantityController = TextEditingController();
     final unitPriceController = TextEditingController();
     final formKey = GlobalKey<FormState>();
-    String selectedCategory = Categories.food;
+    String? selectedCategory = _selectedCategoryName;
 
     showDialog(
       context: context,
@@ -162,11 +185,30 @@ class _ReceiptFormState extends State<ReceiptForm> {
         formKey: formKey,
         itemNames: _itemNames,
         isLoadingItemNames: _isLoadingItemNames,
+        categories: _categories,
+        isLoadingCategories: _isLoadingCategories,
         quantityController: quantityController,
         unitPriceController: unitPriceController,
         selectedCategory: selectedCategory,
         onCategoryChanged: (category) {
           selectedCategory = category;
+        },
+        onManageCategories: () async {
+          Navigator.pop(dialogContext);
+          await showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            builder: (context) => CategoryManagementSheet(
+              onCategorySelected: (category) {
+                // Category selected, but we don't need to do anything here
+                // The dialog will be reopened with updated categories
+              },
+            ),
+          );
+          // Reload categories after management sheet is closed
+          await _loadCategories();
+          // Reopen the add item dialog
+          _showAddItemDialog(context);
         },
         onItemAdded: (newItemName) {
           // Add new item to the local list if it doesn't exist
@@ -181,7 +223,10 @@ class _ReceiptFormState extends State<ReceiptForm> {
           final quantity = double.tryParse(quantityController.text);
           final unitPrice = double.tryParse(unitPriceController.text);
 
-          if (quantity == null || unitPrice == null || selectedItem.isEmpty) {
+          if (quantity == null ||
+              unitPrice == null ||
+              selectedItem.isEmpty ||
+              selectedCategory == null) {
             return;
           }
 
@@ -192,7 +237,7 @@ class _ReceiptFormState extends State<ReceiptForm> {
             description: selectedItem,
             unitPrice: unitPrice,
             amount: amount,
-            category: selectedCategory,
+            category: selectedCategory!,
           );
 
           final newItems = List<ReceiptItem>.from(widget.items);
@@ -210,10 +255,13 @@ class _AddItemDialogContent extends StatefulWidget {
   final GlobalKey<FormState> formKey;
   final List<String> itemNames;
   final bool isLoadingItemNames;
+  final List<Category> categories;
+  final bool isLoadingCategories;
   final TextEditingController quantityController;
   final TextEditingController unitPriceController;
-  final String selectedCategory;
-  final ValueChanged<String> onCategoryChanged;
+  final String? selectedCategory;
+  final ValueChanged<String?> onCategoryChanged;
+  final VoidCallback onManageCategories;
   final ValueChanged<String> onItemAdded;
   final ValueChanged<String> onAdd;
 
@@ -221,10 +269,13 @@ class _AddItemDialogContent extends StatefulWidget {
     required this.formKey,
     required this.itemNames,
     required this.isLoadingItemNames,
+    required this.categories,
+    required this.isLoadingCategories,
     required this.quantityController,
     required this.unitPriceController,
     required this.selectedCategory,
     required this.onCategoryChanged,
+    required this.onManageCategories,
     required this.onItemAdded,
     required this.onAdd,
   });
@@ -236,12 +287,13 @@ class _AddItemDialogContent extends StatefulWidget {
 class _AddItemDialogContentState extends State<_AddItemDialogContent> {
   String? selectedItem;
   late List<String> _currentItemNames;
-  String get selectedCategory => widget.selectedCategory;
+  String? selectedCategory;
 
   @override
   void initState() {
     super.initState();
     _currentItemNames = List<String>.from(widget.itemNames);
+    selectedCategory = widget.selectedCategory;
   }
 
   void handleItemSelected(String? item) {
@@ -336,22 +388,42 @@ class _AddItemDialogContentState extends State<_AddItemDialogContent> {
                 },
               ),
               const SizedBox(height: AppSpacing.paddingM),
-              DropdownButtonFormField<String>(
-                value: selectedCategory,
-                decoration: const InputDecoration(
-                  labelText: AppStrings.category,
-                ),
-                items: Categories.all.map((category) {
-                  return DropdownMenuItem(
-                    value: category,
-                    child: Text(category),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  if (value != null) {
-                    widget.onCategoryChanged(value);
-                  }
-                },
+              Row(
+                children: [
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      value: selectedCategory,
+                      decoration: const InputDecoration(
+                        labelText: AppStrings.category,
+                      ),
+                      items: widget.categories.map((category) {
+                        return DropdownMenuItem(
+                          value: category.name,
+                          child: Text(category.name),
+                        );
+                      }).toList(),
+                      onChanged: widget.isLoadingCategories
+                          ? null
+                          : (value) {
+                              setState(() {
+                                selectedCategory = value;
+                              });
+                              widget.onCategoryChanged(value);
+                            },
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return AppStrings.fieldRequired;
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.settings),
+                    onPressed: widget.onManageCategories,
+                    tooltip: AppStrings.manageCategories,
+                  ),
+                ],
               ),
             ],
           ),

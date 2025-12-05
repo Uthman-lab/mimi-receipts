@@ -155,5 +155,45 @@ class ReceiptRepositoryImpl implements ReceiptRepository {
   Future<List<Receipt>> getReceiptsByShopId(int shopId) async {
     return await localDataSource.getReceiptsByShopId(shopId);
   }
+
+  @override
+  Future<List<Category>> getCategories() async {
+    return await localDataSource.getCategories();
+  }
+
+  @override
+  Future<Category?> getCategoryById(int id) async {
+    return await localDataSource.getCategoryById(id);
+  }
+
+  @override
+  Future<int> addCategory(Category category) async {
+    final categoryModel = CategoryModel(
+      name: category.name,
+      color: category.color,
+    );
+    return await localDataSource.insertCategory(categoryModel);
+  }
+
+  @override
+  Future<void> updateCategory(Category category) async {
+    if (category.id == null) throw Exception('Category ID is required for update');
+    final categoryModel = CategoryModel(
+      id: category.id,
+      name: category.name,
+      color: category.color,
+    );
+    await localDataSource.updateCategory(categoryModel);
+  }
+
+  @override
+  Future<void> deleteCategory(int id) async {
+    await localDataSource.deleteCategory(id);
+  }
+
+  @override
+  Future<bool> categoryHasReceiptItems(int categoryId) async {
+    return await localDataSource.categoryHasReceiptItems(categoryId);
+  }
 }
 

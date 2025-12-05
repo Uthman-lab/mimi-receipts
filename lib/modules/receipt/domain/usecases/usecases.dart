@@ -12,4 +12,9 @@ export 'add_shop.dart';
 export 'update_shop.dart';
 export 'delete_shop.dart';
 export 'get_receipts_by_shop.dart';
+export 'get_categories.dart';
+export 'add_category.dart';
+export 'update_category.dart';
+export 'delete_category.dart';
+export 'category_has_receipt_items.dart';
 

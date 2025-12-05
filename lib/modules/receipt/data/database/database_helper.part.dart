@@ -4,6 +4,7 @@ part of 'database_helper.dart';
 const String tableReceipts = 'receipts';
 const String tableReceiptItems = 'receipt_items';
 const String tableShops = 'shops';
+const String tableCategories = 'categories';
 
 // Receipts table columns
 const String columnId = 'id';
@@ -25,8 +26,13 @@ const String columnUnitPrice = 'unit_price';
 const String columnAmount = 'amount';
 const String columnCategory = 'category';
 
+// Categories table columns
+const String columnCategoryName = 'name';
+const String columnCategoryColor = 'color';
+
 // Create shops table SQL
-const String createShopsTable = '''
+const String createShopsTable =
+    '''
   CREATE TABLE $tableShops (
     $columnId INTEGER PRIMARY KEY AUTOINCREMENT,
     $columnShopNameCol TEXT NOT NULL,
@@ -36,7 +42,8 @@ const String createShopsTable = '''
 ''';
 
 // Create receipts table SQL (updated with shop_id)
-const String createReceiptsTable = '''
+const String createReceiptsTable =
+    '''
   CREATE TABLE $tableReceipts (
     $columnId INTEGER PRIMARY KEY AUTOINCREMENT,
     $columnShopId INTEGER NOT NULL,
@@ -48,7 +55,8 @@ const String createReceiptsTable = '''
 ''';
 
 // Create receipt_items table SQL
-const String createReceiptItemsTable = '''
+const String createReceiptItemsTable =
+    '''
   CREATE TABLE $tableReceiptItems (
     $columnId INTEGER PRIMARY KEY AUTOINCREMENT,
     $columnReceiptId INTEGER NOT NULL,
@@ -61,4 +69,12 @@ const String createReceiptItemsTable = '''
   )
 ''';
 
-
+// Create categories table SQL
+const String createCategoriesTable =
+    '''
+  CREATE TABLE $tableCategories (
+    $columnId INTEGER PRIMARY KEY AUTOINCREMENT,
+    $columnCategoryName TEXT NOT NULL UNIQUE,
+    $columnCategoryColor TEXT
+  )
+''';

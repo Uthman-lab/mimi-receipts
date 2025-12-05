@@ -10,10 +10,7 @@ class ReceiptLocalDataSource {
 
   Future<List<ReceiptModel>> getReceipts() async {
     final db = await databaseHelper.database;
-    final receipts = await db.query(
-      tableReceipts,
-      orderBy: '$columnDate DESC',
-    );
+    final receipts = await db.query(tableReceipts, orderBy: '$columnDate DESC');
 
     final List<ReceiptModel> receiptList = [];
     for (var receiptMap in receipts) {
@@ -51,31 +48,26 @@ class ReceiptLocalDataSource {
 
   Future<int> insertReceipt(ReceiptModel receipt) async {
     final db = await databaseHelper.database;
-    final receiptId = await db.insert(
-      tableReceipts,
-      receipt.toDatabaseJson(),
-    );
+    final receiptId = await db.insert(tableReceipts, receipt.toDatabaseJson());
 
     // Insert items
     for (var item in receipt.items) {
-      await db.insert(
-        tableReceiptItems,
-        {
-          columnReceiptId: receiptId,
-          columnQuantity: item.quantity,
-          columnDescription: item.description,
-          columnUnitPrice: item.unitPrice,
-          columnAmount: item.amount,
-          columnCategory: item.category,
-        },
-      );
+      await db.insert(tableReceiptItems, {
+        columnReceiptId: receiptId,
+        columnQuantity: item.quantity,
+        columnDescription: item.description,
+        columnUnitPrice: item.unitPrice,
+        columnAmount: item.amount,
+        columnCategory: item.category,
+      });
     }
 
     return receiptId;
   }
 
   Future<void> updateReceipt(ReceiptModel receipt) async {
-    if (receipt.id == null) throw Exception('Receipt ID is required for update');
+    if (receipt.id == null)
+      throw Exception('Receipt ID is required for update');
 
     final db = await databaseHelper.database;
     await db.update(
@@ -94,27 +86,20 @@ class ReceiptLocalDataSource {
 
     // Insert new items
     for (var item in receipt.items) {
-      await db.insert(
-        tableReceiptItems,
-        {
-          columnReceiptId: receipt.id,
-          columnQuantity: item.quantity,
-          columnDescription: item.description,
-          columnUnitPrice: item.unitPrice,
-          columnAmount: item.amount,
-          columnCategory: item.category,
-        },
-      );
+      await db.insert(tableReceiptItems, {
+        columnReceiptId: receipt.id,
+        columnQuantity: item.quantity,
+        columnDescription: item.description,
+        columnUnitPrice: item.unitPrice,
+        columnAmount: item.amount,
+        columnCategory: item.category,
+      });
     }
   }
 
   Future<void> deleteReceipt(int id) async {
     final db = await databaseHelper.database;
-    await db.delete(
-      tableReceipts,
-      where: '${columnId} = ?',
-      whereArgs: [id],
-    );
+    await db.delete(tableReceipts, where: '${columnId} = ?', whereArgs: [id]);
     // Items will be deleted automatically due to CASCADE
   }
 
@@ -125,48 +110,44 @@ class ReceiptLocalDataSource {
     final totalResult = await db.rawQuery(
       'SELECT SUM(${columnTotalAmount}) as total FROM ${tableReceipts}',
     );
-    final totalSpending = (totalResult.first['total'] as num?)?.toDouble() ?? 0.0;
+    final totalSpending =
+        (totalResult.first['total'] as num?)?.toDouble() ?? 0.0;
 
     // Spending by category
-    final categoryResult = await db.rawQuery(
-      '''
+    final categoryResult = await db.rawQuery('''
       SELECT ${columnCategory}, SUM(${columnAmount}) as total
       FROM ${tableReceiptItems}
       GROUP BY ${columnCategory}
-      ''',
-    );
+      ''');
     final Map<String, double> spendingByCategory = {};
     for (var row in categoryResult) {
-      spendingByCategory[row[columnCategory] as String] =
-          (row['total'] as num).toDouble();
+      spendingByCategory[row[columnCategory] as String] = (row['total'] as num)
+          .toDouble();
     }
 
     // Spending by shop
-    final shopResult = await db.rawQuery(
-      '''
+    final shopResult = await db.rawQuery('''
       SELECT ${columnShopName}, SUM(${columnTotalAmount}) as total
       FROM ${tableReceipts}
       GROUP BY ${columnShopName}
-      ''',
-    );
+      ''');
     final Map<String, double> spendingByShop = {};
     for (var row in shopResult) {
-      spendingByShop[row[columnShopName] as String] =
-          (row['total'] as num).toDouble();
+      spendingByShop[row[columnShopName] as String] = (row['total'] as num)
+          .toDouble();
     }
 
     // Monthly spending
-    final monthlyResult = await db.rawQuery(
-      '''
+    final monthlyResult = await db.rawQuery('''
       SELECT strftime('%Y-%m', ${columnDate}) as month, SUM(${columnTotalAmount}) as total
       FROM ${tableReceipts}
       GROUP BY month
       ORDER BY month DESC
-      ''',
-    );
+      ''');
     final Map<String, double> monthlySpending = {};
     for (var row in monthlyResult) {
-      monthlySpending[row['month'] as String] = (row['total'] as num).toDouble();
+      monthlySpending[row['month'] as String] = (row['total'] as num)
+          .toDouble();
     }
 
     return {
@@ -177,7 +158,9 @@ class ReceiptLocalDataSource {
     };
   }
 
-  Future<List<Map<String, dynamic>>> getPriceHistory(String itemDescription) async {
+  Future<List<Map<String, dynamic>>> getPriceHistory(
+    String itemDescription,
+  ) async {
     final db = await databaseHelper.database;
     final result = await db.rawQuery(
       '''
@@ -194,12 +177,16 @@ class ReceiptLocalDataSource {
       ['%$itemDescription%'],
     );
 
-    return result.map((row) => {
-          'date': row['date'] as String,
-          'shopName': row['shop_name'] as String,
-          'unitPrice': (row['unit_price'] as num).toDouble(),
-          'quantity': (row['quantity'] as num).toDouble(),
-        }).toList();
+    return result
+        .map(
+          (row) => {
+            'date': row['date'] as String,
+            'shopName': row['shop_name'] as String,
+            'unitPrice': (row['unit_price'] as num).toDouble(),
+            'quantity': (row['quantity'] as num).toDouble(),
+          },
+        )
+        .toList();
   }
 
   Future<List<String>> getShopNames() async {
@@ -258,10 +245,7 @@ class ReceiptLocalDataSource {
 
   Future<int> insertShop(ShopModel shop) async {
     final db = await databaseHelper.database;
-    return await db.insert(
-      tableShops,
-      shop.toDatabaseJson(),
-    );
+    return await db.insert(tableShops, shop.toDatabaseJson());
   }
 
   Future<void> updateShop(ShopModel shop) async {
@@ -277,11 +261,7 @@ class ReceiptLocalDataSource {
 
   Future<void> deleteShop(int id) async {
     final db = await databaseHelper.database;
-    await db.delete(
-      tableShops,
-      where: '${columnId} = ?',
-      whereArgs: [id],
-    );
+    await db.delete(tableShops, where: '${columnId} = ?', whereArgs: [id]);
   }
 
   Future<String> getShopNameById(int shopId) async {
@@ -312,5 +292,64 @@ class ReceiptLocalDataSource {
     }
     return receiptList;
   }
-}
 
+  // Category methods
+  Future<List<CategoryModel>> getCategories() async {
+    final db = await databaseHelper.database;
+    final result = await db.query(
+      tableCategories,
+      orderBy: '$columnCategoryName ASC',
+    );
+    return result.map((row) => CategoryModel.fromDatabaseJson(row)).toList();
+  }
+
+  Future<CategoryModel?> getCategoryById(int id) async {
+    final db = await databaseHelper.database;
+    final result = await db.query(
+      tableCategories,
+      where: '${columnId} = ?',
+      whereArgs: [id],
+    );
+    if (result.isEmpty) return null;
+    return CategoryModel.fromDatabaseJson(result.first);
+  }
+
+  Future<int> insertCategory(CategoryModel category) async {
+    final db = await databaseHelper.database;
+    return await db.insert(tableCategories, category.toDatabaseJson());
+  }
+
+  Future<void> updateCategory(CategoryModel category) async {
+    if (category.id == null)
+      throw Exception('Category ID is required for update');
+    final db = await databaseHelper.database;
+    await db.update(
+      tableCategories,
+      category.toDatabaseJson(),
+      where: '${columnId} = ?',
+      whereArgs: [category.id],
+    );
+  }
+
+  Future<void> deleteCategory(int id) async {
+    final db = await databaseHelper.database;
+    await db.delete(tableCategories, where: '${columnId} = ?', whereArgs: [id]);
+  }
+
+  Future<bool> categoryHasReceiptItems(int categoryId) async {
+    final db = await databaseHelper.database;
+    final category = await getCategoryById(categoryId);
+    if (category == null) return false;
+
+    final result = await db.rawQuery(
+      '''
+      SELECT COUNT(*) as count
+      FROM $tableReceiptItems
+      WHERE $columnCategory = ?
+      LIMIT 1
+      ''',
+      [category.name],
+    );
+    return (result.first['count'] as int) > 0;
+  }
+}
