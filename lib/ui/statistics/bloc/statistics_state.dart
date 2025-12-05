@@ -33,3 +33,4 @@ class StatisticsError extends StatisticsState {
   List<Object?> get props => [message];
 }
 
+

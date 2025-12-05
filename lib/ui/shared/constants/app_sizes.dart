@@ -27,3 +27,4 @@ class AppSizes {
   static const double chartHeightLarge = 300.0;
 }
 
+

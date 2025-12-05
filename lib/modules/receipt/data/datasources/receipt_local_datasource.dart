@@ -201,5 +201,99 @@ class ReceiptLocalDataSource {
           'quantity': (row['quantity'] as num).toDouble(),
         }).toList();
   }
+
+  Future<List<String>> getShopNames() async {
+    final db = await databaseHelper.database;
+    final result = await db.rawQuery(
+      'SELECT DISTINCT $columnShopName FROM $tableReceipts ORDER BY $columnShopName ASC',
+    );
+    return result.map((row) => row[columnShopName] as String).toList();
+  }
+
+  Future<List<String>> getItemNames() async {
+    final db = await databaseHelper.database;
+    final result = await db.rawQuery(
+      'SELECT DISTINCT $columnDescription FROM $tableReceiptItems ORDER BY $columnDescription ASC',
+    );
+    return result.map((row) => row[columnDescription] as String).toList();
+  }
+
+  Future<double?> getLastItemPrice(String itemName) async {
+    final db = await databaseHelper.database;
+    final result = await db.rawQuery(
+      '''
+      SELECT ri.${columnUnitPrice}
+      FROM ${tableReceiptItems} ri
+      JOIN ${tableReceipts} r ON ri.${columnReceiptId} = r.${columnId}
+      WHERE LOWER(ri.${columnDescription}) = LOWER(?)
+      ORDER BY r.${columnDate} DESC
+      LIMIT 1
+      ''',
+      [itemName],
+    );
+    if (result.isEmpty) return null;
+    return (result.first[columnUnitPrice] as num?)?.toDouble();
+  }
+
+  // Shop methods
+  Future<List<ShopModel>> getShops() async {
+    final db = await databaseHelper.database;
+    final result = await db.query(
+      tableShops,
+      orderBy: '$columnShopNameCol ASC',
+    );
+    return result.map((row) => ShopModel.fromDatabaseJson(row)).toList();
+  }
+
+  Future<ShopModel?> getShopById(int id) async {
+    final db = await databaseHelper.database;
+    final result = await db.query(
+      tableShops,
+      where: '${columnId} = ?',
+      whereArgs: [id],
+    );
+    if (result.isEmpty) return null;
+    return ShopModel.fromDatabaseJson(result.first);
+  }
+
+  Future<int> insertShop(ShopModel shop) async {
+    final db = await databaseHelper.database;
+    return await db.insert(
+      tableShops,
+      shop.toDatabaseJson(),
+    );
+  }
+
+  Future<void> updateShop(ShopModel shop) async {
+    if (shop.id == null) throw Exception('Shop ID is required for update');
+    final db = await databaseHelper.database;
+    await db.update(
+      tableShops,
+      shop.toDatabaseJson(),
+      where: '${columnId} = ?',
+      whereArgs: [shop.id],
+    );
+  }
+
+  Future<void> deleteShop(int id) async {
+    final db = await databaseHelper.database;
+    await db.delete(
+      tableShops,
+      where: '${columnId} = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<String> getShopNameById(int shopId) async {
+    final db = await databaseHelper.database;
+    final result = await db.query(
+      tableShops,
+      columns: [columnShopNameCol],
+      where: '${columnId} = ?',
+      whereArgs: [shopId],
+    );
+    if (result.isEmpty) return '';
+    return result.first[columnShopNameCol] as String;
+  }
 }
 

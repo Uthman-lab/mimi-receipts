@@ -20,6 +20,12 @@ class AppStrings {
   static const String editReceipt = 'Edit Receipt';
   static const String receiptDetails = 'Receipt Details';
   static const String shopName = 'Shop Name';
+  static const String shop = 'Shop';
+  static const String addShop = 'Add Shop';
+  static const String selectShop = 'Select Shop';
+  static const String address = 'Address';
+  static const String telephone = 'Telephone';
+  static const String tel = 'Tel';
   static const String date = 'Date';
   static const String totalAmount = 'Total Amount';
   static const String items = 'Items';
@@ -30,7 +36,7 @@ class AppStrings {
   static const String addItem = 'Add Item';
   static const String editItem = 'Edit Item';
   static const String quantity = 'Quantity';
-  static const String description = 'Description';
+  static const String description = 'Item Name or Description';
   static const String unitPrice = 'Unit Price';
   static const String amount = 'Amount';
   static const String category = 'Category';

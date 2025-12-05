@@ -8,5 +8,15 @@ abstract class ReceiptRepository {
   Future<void> deleteReceipt(int id);
   Future<Map<String, dynamic>> getStatistics();
   Future<List<Map<String, dynamic>>> getPriceHistory(String itemDescription);
+  Future<List<String>> getShopNames();
+  Future<List<String>> getItemNames();
+  Future<double?> getLastItemPrice(String itemName);
+  
+  // Shop methods
+  Future<List<Shop>> getShops();
+  Future<Shop?> getShopById(int id);
+  Future<int> addShop(Shop shop);
+  Future<void> updateShop(Shop shop);
+  Future<void> deleteShop(int id);
 }
 

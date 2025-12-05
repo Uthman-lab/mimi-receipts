@@ -16,3 +16,4 @@ class LoadPriceHistory extends PriceComparisonEvent {
   List<Object?> get props => [itemDescription];
 }
 
+

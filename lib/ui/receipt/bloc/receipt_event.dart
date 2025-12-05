@@ -38,3 +38,4 @@ class DeleteReceiptEvent extends ReceiptEvent {
   List<Object?> get props => [id];
 }
 
+

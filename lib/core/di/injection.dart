@@ -31,6 +31,11 @@ Future<void> setupDependencyInjection() async {
   getIt.registerLazySingleton(() => DeleteReceipt(getIt<ReceiptRepository>()));
   getIt.registerLazySingleton(() => GetStatistics(getIt<ReceiptRepository>()));
   getIt.registerLazySingleton(() => GetPriceHistory(getIt<ReceiptRepository>()));
+  getIt.registerLazySingleton(() => GetShopNames(getIt<ReceiptRepository>()));
+  getIt.registerLazySingleton(() => GetItemNames(getIt<ReceiptRepository>()));
+  getIt.registerLazySingleton(() => GetLastItemPrice(getIt<ReceiptRepository>()));
+  getIt.registerLazySingleton(() => GetShops(getIt<ReceiptRepository>()));
+  getIt.registerLazySingleton(() => AddShop(getIt<ReceiptRepository>()));
 
   // BLoCs
   getIt.registerFactory(

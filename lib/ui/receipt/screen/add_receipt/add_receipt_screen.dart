@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../modules/receipt/domain/entities/receipt_item.dart';
+import '../../../../modules/receipt/domain/entities/shop.dart';
+import '../../../../core/di/injection.dart';
+import '../../../../modules/receipt/domain/repositories/repositories.dart';
 import '../../bloc/receipt_bloc.dart';
 import '../../../shared/shared.dart';
 import '../../../../modules/receipt/domain/entities/receipt.dart';
@@ -17,7 +20,7 @@ class AddReceiptScreen extends StatefulWidget {
 
 class _AddReceiptScreenState extends State<AddReceiptScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _shopNameController = TextEditingController();
+  Shop? _selectedShop;
   DateTime? _selectedDate;
   List<ReceiptItem> _items = [];
 
@@ -25,18 +28,32 @@ class _AddReceiptScreenState extends State<AddReceiptScreen> {
   void initState() {
     super.initState();
     if (widget.receipt != null) {
-      _shopNameController.text = widget.receipt!.shopName;
       _selectedDate = widget.receipt!.date;
       _items = List.from(widget.receipt!.items);
+      _loadShopForReceipt();
     } else {
       _selectedDate = DateTime.now();
     }
   }
 
-  @override
-  void dispose() {
-    _shopNameController.dispose();
-    super.dispose();
+  Future<void> _loadShopForReceipt() async {
+    if (widget.receipt != null) {
+      try {
+        final repository = getIt<ReceiptRepository>();
+        final shop = await repository.getShopById(widget.receipt!.shopId);
+        setState(() {
+          _selectedShop = shop;
+        });
+      } catch (e) {
+        // If shop not found, create a temporary shop with just the name
+        setState(() {
+          _selectedShop = Shop(
+            id: widget.receipt!.shopId,
+            name: widget.receipt!.shopName,
+          );
+        });
+      }
+    }
   }
 
   double get _totalAmount {
@@ -45,6 +62,13 @@ class _AddReceiptScreenState extends State<AddReceiptScreen> {
 
   void _saveReceipt() {
     if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    if (_selectedShop == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please select a shop')));
       return;
     }
 
@@ -57,7 +81,8 @@ class _AddReceiptScreenState extends State<AddReceiptScreen> {
 
     final receipt = Receipt(
       id: widget.receipt?.id,
-      shopName: _shopNameController.text,
+      shopId: _selectedShop!.id!,
+      shopName: _selectedShop!.name,
       date: _selectedDate!,
       totalAmount: _totalAmount,
       items: _items,
@@ -76,18 +101,22 @@ class _AddReceiptScreenState extends State<AddReceiptScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.receipt != null ? AppStrings.editReceipt : AppStrings.addReceipt),
+        title: Text(
+          widget.receipt != null
+              ? AppStrings.editReceipt
+              : AppStrings.addReceipt,
+        ),
       ),
       body: BlocListener<ReceiptBloc, ReceiptState>(
         listener: (context, state) {
           if (state is ReceiptOperationSuccess) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message)),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(state.message)));
           } else if (state is ReceiptError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message)),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(state.message)));
           }
         },
         child: Form(
@@ -95,7 +124,12 @@ class _AddReceiptScreenState extends State<AddReceiptScreen> {
           child: SingleChildScrollView(
             padding: AppSpacing.edgeInsetsM,
             child: ReceiptForm(
-              shopNameController: _shopNameController,
+              selectedShop: _selectedShop,
+              onShopChanged: (shop) {
+                setState(() {
+                  _selectedShop = shop;
+                });
+              },
               initialDate: _selectedDate,
               onDateChanged: (date) {
                 setState(() {
@@ -114,12 +148,8 @@ class _AddReceiptScreenState extends State<AddReceiptScreen> {
       ),
       bottomNavigationBar: Padding(
         padding: AppSpacing.edgeInsetsM,
-        child: AppButton(
-          label: AppStrings.save,
-          onPressed: _saveReceipt,
-        ),
+        child: AppButton(label: AppStrings.save, onPressed: _saveReceipt),
       ),
     );
   }
 }
-

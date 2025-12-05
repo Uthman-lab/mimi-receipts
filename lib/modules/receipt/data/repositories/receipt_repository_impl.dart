@@ -21,6 +21,7 @@ class ReceiptRepositoryImpl implements ReceiptRepository {
   @override
   Future<int> addReceipt(Receipt receipt) async {
     final receiptModel = ReceiptModel(
+      shopId: receipt.shopId,
       shopName: receipt.shopName,
       date: receipt.date,
       totalAmount: receipt.totalAmount,
@@ -49,6 +50,7 @@ class ReceiptRepositoryImpl implements ReceiptRepository {
     
     final updatedReceipt = ReceiptModel(
       id: id,
+      shopId: receiptModel.shopId,
       shopName: receiptModel.shopName,
       date: receiptModel.date,
       totalAmount: receiptModel.totalAmount,
@@ -65,6 +67,7 @@ class ReceiptRepositoryImpl implements ReceiptRepository {
     
     final receiptModel = ReceiptModel(
       id: receipt.id,
+      shopId: receipt.shopId,
       shopName: receipt.shopName,
       date: receipt.date,
       totalAmount: receipt.totalAmount,
@@ -94,6 +97,58 @@ class ReceiptRepositoryImpl implements ReceiptRepository {
   @override
   Future<List<Map<String, dynamic>>> getPriceHistory(String itemDescription) async {
     return await localDataSource.getPriceHistory(itemDescription);
+  }
+
+  @override
+  Future<List<String>> getShopNames() async {
+    return await localDataSource.getShopNames();
+  }
+
+  @override
+  Future<List<String>> getItemNames() async {
+    return await localDataSource.getItemNames();
+  }
+
+  @override
+  Future<double?> getLastItemPrice(String itemName) async {
+    return await localDataSource.getLastItemPrice(itemName);
+  }
+
+  @override
+  Future<List<Shop>> getShops() async {
+    return await localDataSource.getShops();
+  }
+
+  @override
+  Future<Shop?> getShopById(int id) async {
+    return await localDataSource.getShopById(id);
+  }
+
+  @override
+  Future<int> addShop(Shop shop) async {
+    final shopModel = ShopModel(
+      name: shop.name,
+      address: shop.address,
+      tel: shop.tel,
+    );
+    return await localDataSource.insertShop(shopModel);
+  }
+
+  @override
+  Future<void> updateShop(Shop shop) async {
+    if (shop.id == null) throw Exception('Shop ID is required for update');
+    final shopModel = ShopModel(
+      id: shop.id,
+      name: shop.name,
+      address: shop.address,
+      tel: shop.tel,
+    );
+    await localDataSource.updateShop(shopModel);
+  }
+
+  @override
+  Future<void> deleteShop(int id) async {
+    await localDataSource.deleteShop(id);
   }
 }
 

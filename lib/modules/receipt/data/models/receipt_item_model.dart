@@ -36,3 +36,4 @@ class ReceiptItemModel extends ReceiptItem {
   }
 }
 
+

@@ -33,3 +33,4 @@ class PriceComparisonError extends PriceComparisonState {
   List<Object?> get props => [message];
 }
 
+

@@ -42,3 +42,4 @@ class ReceiptOperationSuccess extends ReceiptState {
   List<Object?> get props => [message];
 }
 
+

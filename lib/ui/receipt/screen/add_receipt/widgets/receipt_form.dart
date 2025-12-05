@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../shared/shared.dart';
 import '../../../../../modules/receipt/domain/entities/receipt_item.dart';
+import '../../../../../modules/receipt/domain/entities/shop.dart';
 import '../../../../../core/constants/categories.dart';
+import '../../../../../core/di/injection.dart';
+import '../../../../../modules/receipt/domain/usecases/usecases.dart';
 
 class ReceiptForm extends StatefulWidget {
-  final TextEditingController shopNameController;
+  final Shop? selectedShop;
+  final ValueChanged<Shop?> onShopChanged;
   final DateTime? initialDate;
   final ValueChanged<DateTime> onDateChanged;
   final List<ReceiptItem> items;
@@ -13,7 +17,8 @@ class ReceiptForm extends StatefulWidget {
 
   const ReceiptForm({
     super.key,
-    required this.shopNameController,
+    this.selectedShop,
+    required this.onShopChanged,
     this.initialDate,
     required this.onDateChanged,
     required this.items,
@@ -26,11 +31,29 @@ class ReceiptForm extends StatefulWidget {
 
 class _ReceiptFormState extends State<ReceiptForm> {
   DateTime? _selectedDate;
+  List<String> _itemNames = [];
+  bool _isLoadingItemNames = true;
 
   @override
   void initState() {
     super.initState();
     _selectedDate = widget.initialDate ?? DateTime.now();
+    _loadItemNames();
+  }
+
+  Future<void> _loadItemNames() async {
+    try {
+      final getItemNames = getIt<GetItemNames>();
+      final items = await getItemNames();
+      setState(() {
+        _itemNames = items;
+        _isLoadingItemNames = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoadingItemNames = false;
+      });
+    }
   }
 
   double get totalAmount {
@@ -42,11 +65,11 @@ class _ReceiptFormState extends State<ReceiptForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        AppTextField(
-          label: AppStrings.shopName,
-          controller: widget.shopNameController,
-          validator: (value) {
-            if (value == null || value.isEmpty) {
+        ShopDropdownField(
+          selectedShop: widget.selectedShop,
+          onShopSelected: widget.onShopChanged,
+          validator: (shop) {
+            if (shop == null) {
               return AppStrings.fieldRequired;
             }
             return null;
@@ -141,21 +164,37 @@ class _ReceiptFormState extends State<ReceiptForm> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              AppTextField(
+              AppAutocompleteField(
                 label: AppStrings.description,
                 controller: descriptionController,
+                options: _itemNames,
+                enabled: !_isLoadingItemNames,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return AppStrings.fieldRequired;
                   }
                   return null;
                 },
+                onSelected: (String selectedItem) async {
+                  // Auto-fill unit price when item is selected
+                  try {
+                    final getLastItemPrice = getIt<GetLastItemPrice>();
+                    final lastPrice = await getLastItemPrice(selectedItem);
+                    if (lastPrice != null && context.mounted) {
+                      unitPriceController.text = lastPrice.toStringAsFixed(2);
+                    }
+                  } catch (e) {
+                    // Ignore errors, user can still enter price manually
+                  }
+                },
               ),
               const SizedBox(height: AppSpacing.paddingM),
               AppTextField(
                 label: AppStrings.quantity,
                 controller: quantityController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 inputFormatters: [
                   FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
                 ],
@@ -173,7 +212,9 @@ class _ReceiptFormState extends State<ReceiptForm> {
               AppTextField(
                 label: AppStrings.unitPrice,
                 controller: unitPriceController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 inputFormatters: [
                   FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
                 ],
@@ -190,7 +231,9 @@ class _ReceiptFormState extends State<ReceiptForm> {
               const SizedBox(height: AppSpacing.paddingM),
               DropdownButtonFormField<String>(
                 value: selectedCategory,
-                decoration: const InputDecoration(labelText: AppStrings.category),
+                decoration: const InputDecoration(
+                  labelText: AppStrings.category,
+                ),
                 items: Categories.all.map((category) {
                   return DropdownMenuItem(
                     value: category,
@@ -215,8 +258,10 @@ class _ReceiptFormState extends State<ReceiptForm> {
             onPressed: () {
               final quantity = double.tryParse(quantityController.text);
               final unitPrice = double.tryParse(unitPriceController.text);
-              
-              if (quantity == null || unitPrice == null || descriptionController.text.isEmpty) {
+
+              if (quantity == null ||
+                  unitPrice == null ||
+                  descriptionController.text.isEmpty) {
                 return;
               }
 
@@ -243,4 +288,3 @@ class _ReceiptFormState extends State<ReceiptForm> {
     );
   }
 }
-

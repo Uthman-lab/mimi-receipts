@@ -2,13 +2,15 @@ import 'receipt_item.dart';
 
 class Receipt {
   final int? id;
-  final String shopName;
+  final int shopId;
+  final String shopName; // Kept for backward compatibility during migration
   final DateTime date;
   final double totalAmount;
   final List<ReceiptItem> items;
 
   const Receipt({
     this.id,
+    required this.shopId,
     required this.shopName,
     required this.date,
     required this.totalAmount,
@@ -17,6 +19,7 @@ class Receipt {
 
   Receipt copyWith({
     int? id,
+    int? shopId,
     String? shopName,
     DateTime? date,
     double? totalAmount,
@@ -24,6 +27,7 @@ class Receipt {
   }) {
     return Receipt(
       id: id ?? this.id,
+      shopId: shopId ?? this.shopId,
       shopName: shopName ?? this.shopName,
       date: date ?? this.date,
       totalAmount: totalAmount ?? this.totalAmount,
@@ -31,4 +35,5 @@ class Receipt {
     );
   }
 }
+
 

@@ -35,3 +35,4 @@ class AppSpacing {
   static const EdgeInsets verticalL = EdgeInsets.symmetric(vertical: paddingL);
 }
 
+

@@ -1,14 +1,13 @@
 import '../entities/entities.dart';
 import '../repositories/repositories.dart';
 
-class GetReceipts {
+class AddShop {
   final ReceiptRepository repository;
 
-  GetReceipts(this.repository);
+  AddShop(this.repository);
 
-  Future<List<Receipt>> call() {
-    return repository.getReceipts();
+  Future<int> call(Shop shop) {
+    return repository.addShop(shop);
   }
 }
-
 

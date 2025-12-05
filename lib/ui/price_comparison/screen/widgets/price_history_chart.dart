@@ -82,3 +82,4 @@ class PriceHistoryChart extends StatelessWidget {
   }
 }
 
+
