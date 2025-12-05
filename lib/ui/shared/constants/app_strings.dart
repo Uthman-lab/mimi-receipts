@@ -58,7 +58,16 @@ class AppStrings {
   static const String totalSpending = 'Total Spending';
   static const String spendingByCategory = 'Spending by Category';
   static const String spendingByShop = 'Spending by Shop';
+  static const String spendingByItem = 'Spending by Item';
   static const String monthlySpending = 'Monthly Spending';
+  static const String monthlyItemSpending = 'Monthly Item Spending';
+  static const String itemMonthlyTrends = 'Item Monthly Trends';
+  static const String itemMonthlyBreakdown = 'Item Monthly Breakdown';
+  static const String topItems = 'Top Items';
+  static const String filterByShop = 'Filter by Shop';
+  static const String allShops = 'All Shops';
+  static const String averagePrice = 'Average Price';
+  static const String purchaseCount = 'Purchase Count';
   static const String noData = 'No Data';
   static const String noDataMessage = 'Add receipts to see statistics';
 

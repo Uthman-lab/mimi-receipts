@@ -52,6 +52,22 @@ class AppColors {
         return categoryOther;
     }
   }
+
+  /// Get a list of colors for charts
+  static List<Color> getChartColors() {
+    return [
+      primary,
+      secondary,
+      categoryFood,
+      categoryElectronics,
+      categoryClothing,
+      categoryHousehold,
+      categoryPersonalCare,
+      info,
+      success,
+      warning,
+    ];
+  }
 }
 
 

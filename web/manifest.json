@@ -1,6 +1,6 @@
 {
-    "name": "reciept_tracker",
-    "short_name": "reciept_tracker",
+    "name": "Mimi Receipts",
+    "short_name": "Mimi Receipts",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

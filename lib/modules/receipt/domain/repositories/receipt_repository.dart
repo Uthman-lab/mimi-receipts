@@ -6,7 +6,7 @@ abstract class ReceiptRepository {
   Future<int> addReceipt(Receipt receipt);
   Future<void> updateReceipt(Receipt receipt);
   Future<void> deleteReceipt(int id);
-  Future<Map<String, dynamic>> getStatistics();
+  Future<Map<String, dynamic>> getStatistics({int? shopId});
   Future<List<Map<String, dynamic>>> getPriceHistory(String itemDescription);
   Future<List<String>> getShopNames();
   Future<List<String>> getItemNames();

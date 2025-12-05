@@ -1,4 +1,4 @@
-# reciept_tracker
+# Mimi Receipts
 
 A new Flutter project.
 

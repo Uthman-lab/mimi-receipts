@@ -8,7 +8,12 @@ abstract class StatisticsEvent extends Equatable {
 }
 
 class LoadStatistics extends StatisticsEvent {
-  const LoadStatistics();
+  final int? shopId;
+
+  const LoadStatistics({this.shopId});
+
+  @override
+  List<Object?> get props => [shopId];
 }
 
 

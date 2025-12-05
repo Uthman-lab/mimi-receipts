@@ -5,8 +5,8 @@ class GetStatistics {
 
   GetStatistics(this.repository);
 
-  Future<Map<String, dynamic>> call() {
-    return repository.getStatistics();
+  Future<Map<String, dynamic>> call({int? shopId}) {
+    return repository.getStatistics(shopId: shopId);
   }
 }
 

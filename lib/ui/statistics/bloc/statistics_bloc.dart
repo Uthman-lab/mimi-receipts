@@ -15,7 +15,7 @@ class StatisticsBloc extends Bloc<StatisticsEvent, StatisticsState> {
   Future<void> _onLoadStatistics(LoadStatistics event, Emitter<StatisticsState> emit) async {
     emit(const StatisticsLoading());
     try {
-      final statistics = await getStatistics();
+      final statistics = await getStatistics(shopId: event.shopId);
       emit(StatisticsLoaded(statistics));
     } catch (e) {
       emit(StatisticsError(e.toString()));

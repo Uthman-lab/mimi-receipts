@@ -25,29 +25,35 @@ class ReceiptRepositoryImpl implements ReceiptRepository {
       shopName: receipt.shopName,
       date: receipt.date,
       totalAmount: receipt.totalAmount,
-      items: receipt.items.map((item) => ReceiptItemModel(
-        receiptId: 0, // Will be set after receipt is inserted
-        quantity: item.quantity,
-        description: item.description,
-        unitPrice: item.unitPrice,
-        amount: item.amount,
-        category: item.category,
-      )).toList(),
+      items: receipt.items
+          .map(
+            (item) => ReceiptItemModel(
+              receiptId: 0, // Will be set after receipt is inserted
+              quantity: item.quantity,
+              description: item.description,
+              unitPrice: item.unitPrice,
+              amount: item.amount,
+              category: item.category,
+            ),
+          )
+          .toList(),
     );
     final id = await localDataSource.insertReceipt(receiptModel);
-    
+
     // Update receipt items with the new receipt ID
-    final updatedItems = receiptModel.items.map((item) => 
-      ReceiptItemModel(
-        receiptId: id,
-        quantity: item.quantity,
-        description: item.description,
-        unitPrice: item.unitPrice,
-        amount: item.amount,
-        category: item.category,
-      )
-    ).toList();
-    
+    final updatedItems = receiptModel.items
+        .map(
+          (item) => ReceiptItemModel(
+            receiptId: id,
+            quantity: item.quantity,
+            description: item.description,
+            unitPrice: item.unitPrice,
+            amount: item.amount,
+            category: item.category,
+          ),
+        )
+        .toList();
+
     final updatedReceipt = ReceiptModel(
       id: id,
       shopId: receiptModel.shopId,
@@ -56,30 +62,35 @@ class ReceiptRepositoryImpl implements ReceiptRepository {
       totalAmount: receiptModel.totalAmount,
       items: updatedItems,
     );
-    
+
     await localDataSource.updateReceipt(updatedReceipt);
     return id;
   }
 
   @override
   Future<void> updateReceipt(Receipt receipt) async {
-    if (receipt.id == null) throw Exception('Receipt ID is required for update');
-    
+    if (receipt.id == null)
+      throw Exception('Receipt ID is required for update');
+
     final receiptModel = ReceiptModel(
       id: receipt.id,
       shopId: receipt.shopId,
       shopName: receipt.shopName,
       date: receipt.date,
       totalAmount: receipt.totalAmount,
-      items: receipt.items.map((item) => ReceiptItemModel(
-        id: item.id,
-        receiptId: receipt.id!,
-        quantity: item.quantity,
-        description: item.description,
-        unitPrice: item.unitPrice,
-        amount: item.amount,
-        category: item.category,
-      )).toList(),
+      items: receipt.items
+          .map(
+            (item) => ReceiptItemModel(
+              id: item.id,
+              receiptId: receipt.id!,
+              quantity: item.quantity,
+              description: item.description,
+              unitPrice: item.unitPrice,
+              amount: item.amount,
+              category: item.category,
+            ),
+          )
+          .toList(),
     );
     await localDataSource.updateReceipt(receiptModel);
   }
@@ -90,12 +101,14 @@ class ReceiptRepositoryImpl implements ReceiptRepository {
   }
 
   @override
-  Future<Map<String, dynamic>> getStatistics() async {
-    return await localDataSource.getStatistics();
+  Future<Map<String, dynamic>> getStatistics({int? shopId}) async {
+    return await localDataSource.getStatistics(shopId: shopId);
   }
 
   @override
-  Future<List<Map<String, dynamic>>> getPriceHistory(String itemDescription) async {
+  Future<List<Map<String, dynamic>>> getPriceHistory(
+    String itemDescription,
+  ) async {
     return await localDataSource.getPriceHistory(itemDescription);
   }
 
@@ -177,7 +190,8 @@ class ReceiptRepositoryImpl implements ReceiptRepository {
 
   @override
   Future<void> updateCategory(Category category) async {
-    if (category.id == null) throw Exception('Category ID is required for update');
+    if (category.id == null)
+      throw Exception('Category ID is required for update');
     final categoryModel = CategoryModel(
       id: category.id,
       name: category.name,
@@ -196,4 +210,3 @@ class ReceiptRepositoryImpl implements ReceiptRepository {
     return await localDataSource.categoryHasReceiptItems(categoryId);
   }
 }
-

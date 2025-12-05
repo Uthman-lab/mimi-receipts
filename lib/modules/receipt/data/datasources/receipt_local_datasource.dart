@@ -103,51 +103,175 @@ class ReceiptLocalDataSource {
     // Items will be deleted automatically due to CASCADE
   }
 
-  Future<Map<String, dynamic>> getStatistics() async {
+  Future<Map<String, dynamic>> getStatistics({int? shopId}) async {
     final db = await databaseHelper.database;
+
+    // Build WHERE clause for shop filtering
+    final shopFilter = shopId != null ? 'WHERE ${columnShopId} = $shopId' : '';
 
     // Total spending
     final totalResult = await db.rawQuery(
-      'SELECT SUM(${columnTotalAmount}) as total FROM ${tableReceipts}',
+      'SELECT SUM(${columnTotalAmount}) as total FROM ${tableReceipts} $shopFilter',
     );
     final totalSpending =
         (totalResult.first['total'] as num?)?.toDouble() ?? 0.0;
 
     // Spending by category
-    final categoryResult = await db.rawQuery('''
+    final categoryQuery = shopId != null
+        ? '''
+      SELECT ri.${columnCategory}, SUM(ri.${columnAmount}) as total
+      FROM ${tableReceiptItems} ri
+      JOIN ${tableReceipts} r ON ri.${columnReceiptId} = r.${columnId}
+      WHERE r.${columnShopId} = ?
+      GROUP BY ri.${columnCategory}
+      '''
+        : '''
       SELECT ${columnCategory}, SUM(${columnAmount}) as total
       FROM ${tableReceiptItems}
       GROUP BY ${columnCategory}
-      ''');
+      ''';
+    final categoryArgs = shopId != null ? [shopId] : [];
+    final categoryResult = await db.rawQuery(categoryQuery, categoryArgs);
     final Map<String, double> spendingByCategory = {};
     for (var row in categoryResult) {
       spendingByCategory[row[columnCategory] as String] = (row['total'] as num)
           .toDouble();
     }
 
-    // Spending by shop
-    final shopResult = await db.rawQuery('''
-      SELECT ${columnShopName}, SUM(${columnTotalAmount}) as total
-      FROM ${tableReceipts}
-      GROUP BY ${columnShopName}
-      ''');
+    // Spending by shop (only if not filtering by shop)
     final Map<String, double> spendingByShop = {};
-    for (var row in shopResult) {
-      spendingByShop[row[columnShopName] as String] = (row['total'] as num)
-          .toDouble();
+    if (shopId == null) {
+      final shopResult = await db.rawQuery('''
+        SELECT ${columnShopName}, SUM(${columnTotalAmount}) as total
+        FROM ${tableReceipts}
+        GROUP BY ${columnShopName}
+        ''');
+      for (var row in shopResult) {
+        spendingByShop[row[columnShopName] as String] = (row['total'] as num)
+            .toDouble();
+      }
     }
 
     // Monthly spending
-    final monthlyResult = await db.rawQuery('''
+    final monthlyQuery = shopId != null
+        ? '''
+      SELECT strftime('%Y-%m', ${columnDate}) as month, SUM(${columnTotalAmount}) as total
+      FROM ${tableReceipts}
+      WHERE ${columnShopId} = ?
+      GROUP BY month
+      ORDER BY month DESC
+      '''
+        : '''
       SELECT strftime('%Y-%m', ${columnDate}) as month, SUM(${columnTotalAmount}) as total
       FROM ${tableReceipts}
       GROUP BY month
       ORDER BY month DESC
-      ''');
+      ''';
+    final monthlyArgs = shopId != null ? [shopId] : [];
+    final monthlyResult = await db.rawQuery(monthlyQuery, monthlyArgs);
     final Map<String, double> monthlySpending = {};
     for (var row in monthlyResult) {
       monthlySpending[row['month'] as String] = (row['total'] as num)
           .toDouble();
+    }
+
+    // Spending by item
+    final itemQuery = shopId != null
+        ? '''
+      SELECT 
+        ri.${columnDescription} as item_description,
+        SUM(ri.${columnAmount}) as total_spent,
+        COUNT(*) as purchase_count,
+        AVG(ri.${columnUnitPrice}) as avg_price,
+        SUM(ri.${columnQuantity}) as total_quantity
+      FROM ${tableReceiptItems} ri
+      JOIN ${tableReceipts} r ON ri.${columnReceiptId} = r.${columnId}
+      WHERE r.${columnShopId} = ?
+      GROUP BY ri.${columnDescription}
+      ORDER BY total_spent DESC
+      '''
+        : '''
+      SELECT 
+        ${columnDescription} as item_description,
+        SUM(${columnAmount}) as total_spent,
+        COUNT(*) as purchase_count,
+        AVG(${columnUnitPrice}) as avg_price,
+        SUM(${columnQuantity}) as total_quantity
+      FROM ${tableReceiptItems}
+      GROUP BY ${columnDescription}
+      ORDER BY total_spent DESC
+      ''';
+    final itemArgs = shopId != null ? [shopId] : [];
+    final itemResult = await db.rawQuery(itemQuery, itemArgs);
+    final List<Map<String, dynamic>> spendingByItem = [];
+    for (var row in itemResult) {
+      spendingByItem.add({
+        'itemDescription': row['item_description'] as String,
+        'totalSpent': (row['total_spent'] as num).toDouble(),
+        'purchaseCount': row['purchase_count'] as int,
+        'avgPrice': (row['avg_price'] as num).toDouble(),
+        'totalQuantity': (row['total_quantity'] as num).toDouble(),
+      });
+    }
+
+    // Additional insights
+    final uniqueItemsCount = spendingByItem.length;
+    final avgSpendingPerItem = uniqueItemsCount > 0
+        ? totalSpending / uniqueItemsCount
+        : 0.0;
+
+    // Shop-specific insights (when filtering by shop)
+    int? totalReceipts;
+    double? avgReceiptAmount;
+    if (shopId != null) {
+      final receiptCountResult = await db.rawQuery(
+        'SELECT COUNT(*) as count FROM ${tableReceipts} WHERE ${columnShopId} = ?',
+        [shopId],
+      );
+      totalReceipts = receiptCountResult.first['count'] as int;
+      avgReceiptAmount = totalReceipts > 0
+          ? totalSpending / totalReceipts
+          : 0.0;
+    }
+
+    // Monthly item spending
+    final monthlyItemQuery = shopId != null
+        ? '''
+      SELECT 
+        ri.${columnDescription} as item_description,
+        strftime('%Y-%m', r.${columnDate}) as month,
+        SUM(ri.${columnAmount}) as total_spent
+      FROM ${tableReceiptItems} ri
+      JOIN ${tableReceipts} r ON ri.${columnReceiptId} = r.${columnId}
+      WHERE r.${columnShopId} = ?
+      GROUP BY ri.${columnDescription}, month
+      ORDER BY month ASC, total_spent DESC
+      '''
+        : '''
+      SELECT 
+        ri.${columnDescription} as item_description,
+        strftime('%Y-%m', r.${columnDate}) as month,
+        SUM(ri.${columnAmount}) as total_spent
+      FROM ${tableReceiptItems} ri
+      JOIN ${tableReceipts} r ON ri.${columnReceiptId} = r.${columnId}
+      GROUP BY ri.${columnDescription}, month
+      ORDER BY month ASC, total_spent DESC
+      ''';
+    final monthlyItemArgs = shopId != null ? [shopId] : [];
+    final monthlyItemResult = await db.rawQuery(
+      monthlyItemQuery,
+      monthlyItemArgs,
+    );
+
+    // Organize monthly item data: Map<String, Map<String, double>>
+    // Outer key: item description, Inner key: month, Value: spending amount
+    final Map<String, Map<String, double>> monthlyItemSpending = {};
+    for (var row in monthlyItemResult) {
+      final itemDesc = row['item_description'] as String;
+      final month = row['month'] as String;
+      final amount = (row['total_spent'] as num).toDouble();
+
+      monthlyItemSpending.putIfAbsent(itemDesc, () => {})[month] = amount;
     }
 
     return {
@@ -155,6 +279,12 @@ class ReceiptLocalDataSource {
       'spendingByCategory': spendingByCategory,
       'spendingByShop': spendingByShop,
       'monthlySpending': monthlySpending,
+      'spendingByItem': spendingByItem,
+      'monthlyItemSpending': monthlyItemSpending,
+      'uniqueItemsCount': uniqueItemsCount,
+      'avgSpendingPerItem': avgSpendingPerItem,
+      if (shopId != null) 'totalReceipts': totalReceipts,
+      if (shopId != null) 'avgReceiptAmount': avgReceiptAmount,
     };
   }
 
