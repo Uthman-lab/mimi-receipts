@@ -17,3 +17,4 @@ class LoadPriceHistory extends PriceComparisonEvent {
 }
 
 
+

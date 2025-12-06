@@ -43,3 +43,4 @@ class ReceiptOperationSuccess extends ReceiptState {
 }
 
 
+

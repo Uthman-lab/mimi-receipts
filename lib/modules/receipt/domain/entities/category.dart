@@ -31,3 +31,4 @@ class Category {
   int get hashCode => id.hashCode;
 }
 
+
