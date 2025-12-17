@@ -38,3 +38,4 @@ class ReceiptItemModel extends ReceiptItem {
 
 
 
+

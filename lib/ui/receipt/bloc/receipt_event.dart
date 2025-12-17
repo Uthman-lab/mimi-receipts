@@ -40,3 +40,4 @@ class DeleteReceiptEvent extends ReceiptEvent {
 
 
 
+
