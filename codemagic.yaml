@@ -10,9 +10,26 @@ workflows:
 
         environment:
             groups:
+                # Android code signing environment group
+                # IMPORTANT: Add the following variables to the 'android_code_signing' group in Codemagic dashboard:
+                #
+                # For Gradle signing (required):
+                # - CM_KEYSTORE_PATH: Path to keystore file (e.g., /Users/builder/.keystores/mimi-receipts-upload-keystore.jks)
+                # - CM_KEYSTORE_PASSWORD: Keystore password
+                # - CM_KEY_PASSWORD: Key password
+                # - CM_KEY_ALIAS: Key alias (e.g., "upload")
+                #
+                # To prevent Codemagic auto-signing errors (optional but recommended):
+                # - KEYSTORE_PASSWORD: Same value as CM_KEYSTORE_PASSWORD
+                # - KEY_PASSWORD: Same value as CM_KEY_PASSWORD
+                #
+                # Note: Signing is handled by Gradle during build. Codemagic may attempt auto-signing
+                # but will fail if KEY_PASSWORD/KEYSTORE_PASSWORD are missing. Adding them prevents build failures.
                 - android_code_signing
             vars:
                 PACKAGE_NAME: "com.example.reciept_tracker"
+                # Set CI environment variable to enable Gradle signing configuration
+                CI: "true"
 
         scripts:
             - name: Get Flutter dependencies
@@ -21,6 +38,8 @@ workflows:
 
             - name: Build Android App Bundle
               script: |
+                # Build with release signing configured in build.gradle.kts
+                # Gradle will use CM_* environment variables for signing
                 flutter build appbundle --release
 
         artifacts:

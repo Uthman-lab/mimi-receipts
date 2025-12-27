@@ -42,11 +42,30 @@ android {
     signingConfigs {
         create("release") {
             if (System.getenv("CI") == "true") {
-                // CodeMagic CI environment
-                storeFile = System.getenv("CM_KEYSTORE_PATH")?.let { project.file(it) }
-                storePassword = System.getenv("CM_KEYSTORE_PASSWORD")
-                keyAlias = System.getenv("CM_KEY_ALIAS")
-                keyPassword = System.getenv("CM_KEY_PASSWORD")
+                // Codemagic CI environment - uses CM_* prefixed environment variables
+                val keystorePath = System.getenv("CM_KEYSTORE_PATH")
+                val keystorePassword = System.getenv("CM_KEYSTORE_PASSWORD")
+                val keyAlias = System.getenv("CM_KEY_ALIAS")
+                val keyPassword = System.getenv("CM_KEY_PASSWORD")
+                
+                // Validate that all required signing variables are present
+                if (keystorePath.isNullOrBlank()) {
+                    throw GradleException("CM_KEYSTORE_PATH environment variable is not set. Please configure it in Codemagic environment variables.")
+                }
+                if (keystorePassword.isNullOrBlank()) {
+                    throw GradleException("CM_KEYSTORE_PASSWORD environment variable is not set. Please configure it in Codemagic environment variables.")
+                }
+                if (keyAlias.isNullOrBlank()) {
+                    throw GradleException("CM_KEY_ALIAS environment variable is not set. Please configure it in Codemagic environment variables.")
+                }
+                if (keyPassword.isNullOrBlank()) {
+                    throw GradleException("CM_KEY_PASSWORD environment variable is not set. Please configure it in Codemagic environment variables.")
+                }
+                
+                storeFile = project.file(keystorePath)
+                storePassword = keystorePassword
+                this.keyAlias = keyAlias
+                this.keyPassword = keyPassword
             } else {
                 // Local development - use key.properties file
                 keyAlias = keystoreProperties.getProperty("keyAlias")
