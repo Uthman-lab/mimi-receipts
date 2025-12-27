@@ -10,7 +10,7 @@ workflows:
 
         environment:
             android_signing:
-                - mimi-receipts-upload-key
+                - mimi-receipt-key
             vars:
                 PACKAGE_NAME: "com.example.reciept_tracker"
 
