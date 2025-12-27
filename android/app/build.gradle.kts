@@ -40,32 +40,23 @@ android {
     }
 
     signingConfigs {
-        create("release") {
-            if (System.getenv("CI") == "true") {
-                // Codemagic CI environment - uses CM_* prefixed environment variables
-                val keystorePath = System.getenv("CM_KEYSTORE_PATH")
-                val keystorePassword = System.getenv("CM_KEYSTORE_PASSWORD")
-                val keyAlias = System.getenv("CM_KEY_ALIAS")
-                val keyPassword = System.getenv("CM_KEY_PASSWORD")
-                
-               
-                
-                storeFile = project.file(keystorePath)
-                storePassword = keystorePassword
-                this.keyAlias = keyAlias
-                this.keyPassword = keyPassword
-            } else {
-                // Local development - use key.properties file
-                keyAlias = keystoreProperties.getProperty("keyAlias")
-                keyPassword = keystoreProperties.getProperty("keyPassword")
-                storeFile = keystoreProperties.getProperty("storeFile")?.let { project.file(it) }
-                storePassword = keystoreProperties.getProperty("storePassword")
-            }
-        }
+       release {
+              if (System.getenv()["CI"]) { // CI=true is exported by Codemagic
+                  storeFile file(System.getenv()["CM_KEYSTORE_PATH"])
+                  storePassword System.getenv()["CM_KEYSTORE_PASSWORD"]
+                  keyAlias System.getenv()["CM_KEY_ALIAS"]
+                  keyPassword System.getenv()["CM_KEY_PASSWORD"]
+              } else {
+                  keyAlias keystoreProperties['keyAlias']
+                  keyPassword keystoreProperties['keyPassword']
+                  storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
+                  storePassword keystoreProperties['storePassword']
+              }
+          }
     }
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("release")
+            signingConfig signingConfigs.release
         }
     }
 }
