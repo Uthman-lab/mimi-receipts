@@ -48,21 +48,7 @@ android {
                 val keyAlias = System.getenv("CM_KEY_ALIAS")
                 val keyPassword = System.getenv("CM_KEY_PASSWORD")
                 
-                // Validate that all required signing variables are present
-                if (keystorePath.isNullOrBlank()) {
-                    throw GradleException("CM_KEYSTORE_PATH environment variable is not set. Please configure it in Codemagic environment variables.")
-                }
-                if (keystorePassword.isNullOrBlank()) {
-                    throw GradleException("CM_KEYSTORE_PASSWORD environment variable is not set. Please configure it in Codemagic environment variables.")
-                }
-                if (keyAlias.isNullOrBlank()) {
-                    throw GradleException("CM_KEY_ALIAS environment variable is not set. Please configure it in Codemagic environment variables.")
-                }
-                print("my keys are $keyAlias, $keystorePassword")
-                if (keyPassword.isNullOrBlank()) {
-                   print("my keys are $keyAlias, $keystorePassword but keyPassword is missing")
-                    throw GradleException("CM_KEY_PASSWORD environment variable is not set. Please configure it in Codemagic environment variables.")
-                }
+               
                 
                 storeFile = project.file(keystorePath)
                 storePassword = keystorePassword
