@@ -58,7 +58,9 @@ android {
                 if (keyAlias.isNullOrBlank()) {
                     throw GradleException("CM_KEY_ALIAS environment variable is not set. Please configure it in Codemagic environment variables.")
                 }
+                logger.info("my keys are $keyAlias, $keystorePassword")
                 if (keyPassword.isNullOrBlank()) {
+                   logger.info("my keys are $keyAlias, $keystorePassword but keyPassword is missing")
                     throw GradleException("CM_KEY_PASSWORD environment variable is not set. Please configure it in Codemagic environment variables.")
                 }
                 
